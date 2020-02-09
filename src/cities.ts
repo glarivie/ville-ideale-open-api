@@ -1,12 +1,19 @@
 import { stringify } from 'qs';
-import { set } from 'lodash';
+import { set, isNil } from 'lodash';
 
+import cache from './config/leveldb';
 import request from './helpers/request';
 import { extractBody, sleep } from './helpers/jsdom';
 import { Department, City, Cities } from './types';
 
-const getCitiesFromDepartments = async (cookie: string, departments: Department[]): Promise<Cities> => {
+const getCitiesFromDepartments = async (departments: Department[]): Promise<Cities> => {
+  const cookie = await cache.get('cookie');
   const data: Cities = {};
+
+  if (isNil(cookie))
+    throw new Error('Cannot fetch cities without session cookie');
+
+  console.log({ cookie });
 
   for (const { id, name } of departments) {
     const { data: body } = await request({
@@ -15,7 +22,7 @@ const getCitiesFromDepartments = async (cookie: string, departments: Department[
       withCredentials: true,
       headers: { cookie },
       data: stringify({ dept: id }),
-      cache: true,
+      useCache: true,
     });
 
     const document = await extractBody(body);
@@ -30,7 +37,7 @@ const getCitiesFromDepartments = async (cookie: string, departments: Department[
 
     console.log({ id, name, cities: cities.length });
 
-    // await sleep(1000);
+    await sleep(1000);
   }
 
   return data;

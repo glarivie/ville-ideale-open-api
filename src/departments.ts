@@ -1,22 +1,14 @@
 import request from './helpers/request';
 import { extractBody } from './helpers/jsdom';
-import { retrieveCookieFromCache } from './helpers/cache';
 import { Department } from './types';
 
-interface DepartmentsAndCookie {
-  departments: Department[];
-  cookie: string;
-}
-
-const extractDepartments = async (): Promise<DepartmentsAndCookie> => {
-  const { headers, data: body } = await request({
+const extractDepartments = async (): Promise<Department[]> => {
+  const { data: body } = await request({
     method: 'GET',
     url: '/villespardepts.php',
     withCredentials: true,
-    cache: true,
+    useCache: true,
   });
-
-  const cookie: string = retrieveCookieFromCache() ?? headers['set-cookie'][0].split(';')[0];
 
   const document = await extractBody(body);
   const elements = document.querySelectorAll('#listedepts > a');
@@ -29,7 +21,7 @@ const extractDepartments = async (): Promise<DepartmentsAndCookie> => {
     return { id, name };
   });
 
-  return { departments, cookie };
+  return departments;
 };
 
 export default extractDepartments;
