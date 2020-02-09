@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import UserAgent from 'user-agents';
 import { createHash } from 'crypto';
-import { isNil } from 'lodash';
+import { isNil, omit } from 'lodash';
 
 import cache from '../config/leveldb';
 
@@ -22,7 +22,9 @@ const instance = axios.create({
 });
 
 const request = async ({ useCache, ...config }: RequestConfig): Promise<AxiosResponse> => {
-  const key = createHash('md5').update(JSON.stringify(config)).digest('hex');
+  const key = createHash('md5')
+    .update(JSON.stringify(omit(config, 'headers')))
+    .digest('hex');
 
   if (useCache) {
     const data = await cache.getItem(key);

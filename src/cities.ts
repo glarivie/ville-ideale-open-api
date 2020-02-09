@@ -4,7 +4,7 @@ import { set, isNil } from 'lodash';
 import cache from './config/leveldb';
 import request from './helpers/request';
 import { extractBody, sleep } from './helpers/jsdom';
-import { Department, City, Cities } from './types';
+import { Department, Cities, City } from './types';
 
 const getCitiesFromDepartments = async (departments: Department[]): Promise<Cities> => {
   const cookie = await cache.get('cookie');
@@ -12,8 +12,6 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<Citi
 
   if (isNil(cookie))
     throw new Error('Cannot fetch cities without session cookie');
-
-  console.log({ cookie });
 
   for (const { id, name } of departments) {
     const { data: body } = await request({
@@ -26,7 +24,7 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<Citi
     });
 
     const document = await extractBody(body);
-    const elements = document.querySelectorAll('p > a');
+    const elements = document.querySelectorAll<HTMLAnchorElement>('p > a');
 
     const cities = Array.from(elements).map((element: HTMLAnchorElement): City => ({
       url: element.getAttribute('href'),

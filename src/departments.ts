@@ -7,11 +7,10 @@ const extractDepartments = async (): Promise<Department[]> => {
     method: 'GET',
     url: '/villespardepts.php',
     withCredentials: true,
-    useCache: true,
   });
 
   const document = await extractBody(body);
-  const elements = document.querySelectorAll('#listedepts > a');
+  const elements = document.querySelectorAll<HTMLAnchorElement>('#listedepts > a');
 
   const departments = Array.from(elements).map((element: HTMLAnchorElement): Department => {
     const href = element.getAttribute('href');
