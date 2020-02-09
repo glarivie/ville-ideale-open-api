@@ -1,17 +1,10 @@
-import { checkCacheFolder, cacheSessionCookie } from './helpers/cache';
-
 import extractDepartments from './departments';
 import getCitiesFromDepartments from './cities';
 
 const main = async () => {
   try {
-    checkCacheFolder();
-
-    const { departments, cookie } = await extractDepartments();
-
-    cacheSessionCookie(cookie);
-
-    const citiesFromDepartments = await getCitiesFromDepartments(cookie, departments);
+    const departments = await extractDepartments();
+    const citiesFromDepartments = await getCitiesFromDepartments(departments);
 
     console.log(citiesFromDepartments);
   } catch (error) {

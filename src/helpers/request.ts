@@ -1,11 +1,12 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import UserAgent from 'user-agents';
+import { createHash } from 'crypto';
 import { isNil } from 'lodash';
 
-import { retrieveCachedRequestBody, cacheRequestBody } from '../helpers/cache';
+import cache from '../config/leveldb';
 
 interface RequestConfig extends AxiosRequestConfig {
-  cache?: boolean;
+  useCache?: boolean;
 }
 
 const userAgent = new UserAgent();
@@ -20,20 +21,24 @@ const instance = axios.create({
   responseType: 'text',
 });
 
-const request = async ({ cache, ...config }: RequestConfig): Promise<AxiosResponse> => {
-  if (cache) {
-    const data = retrieveCachedRequestBody(config);
+const request = async ({ useCache, ...config }: RequestConfig): Promise<AxiosResponse> => {
+  const key = createHash('md5').update(JSON.stringify(config)).digest('hex');
 
-    if (!isNil(data)) {
+  if (useCache) {
+    const data = await cache.getItem(key);
+
+    if (!isNil(data))
       return { data } as AxiosResponse;
-    }
   }
 
   const response = await instance.request(config);
+  const { headers, data } = response;
 
-  if (cache) {
-    cacheRequestBody(config, response.data);
-  }
+  if (useCache)
+    await cache.setItem(key, data);
+
+  if (headers && headers['set-cookie'])
+    await cache.setItem('cookie', headers['set-cookie'][0].split(';')[0]);
 
   return response;
 };
