@@ -1,5 +1,5 @@
 import { stringify } from 'qs';
-import { set, isNil } from 'lodash';
+import { set, isNil, random } from 'lodash';
 
 import cache from './config/leveldb';
 import request from './helpers/request';
@@ -35,7 +35,7 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<Citi
 
     console.log({ id, name, cities: cities.length });
 
-    await sleep(1000);
+    await sleep(random(1000, 5000));
   }
 
   return data;

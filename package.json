@@ -19,7 +19,7 @@
     "levelup": "^4.3.2",
     "lodash": "^4.17.15",
     "qs": "^6.9.1",
-    "user-agents": "^1.0.527"
+    "user-agents": "^1.0.528"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",

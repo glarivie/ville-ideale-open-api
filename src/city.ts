@@ -1,8 +1,13 @@
-import { isNil } from 'lodash';
+import { isNil, isNaN, has, random } from 'lodash';
 
 import request from './helpers/request';
+import categories from './constants/rating';
 import { extractBody, sleep } from './helpers/jsdom';
+import getPopulationDensity from './insee';
 import { Cities, City } from './types';
+import { isUndefined } from 'util';
+
+const toFloat = (str: string): number => parseFloat(str.replace(/,/g, '.'));
 
 const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> => {
   const data: City[] = [];
@@ -20,43 +25,78 @@ const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> =
 
       const title = document.querySelector<HTMLHeadingElement>('#colleft > h1:first-child');
       const map = document.querySelector<HTMLAnchorElement>('#carte > a');
+      const png = document.querySelector<HTMLParagraphElement>('p#ng');
+      const global = (isNil(png) || isNaN(toFloat(png.textContent))) ? null : toFloat(png.textContent);
+      const evaluations = document.querySelector<HTMLAnchorElement>('p#nobt > a');
+
+
+      const count = (isNil(evaluations) || isNil(evaluations.textContent.match(/\d+/)))
+        ? 0
+        : parseInt(evaluations.textContent.match(/\d+/)[0]);
 
       const rating = {
-        global: document.querySelector<HTMLParagraphElement>('p#ng').textContent,
+        count,
+        ...!isNil(global) && { global },
         ...Array
           .from(document.querySelectorAll<HTMLTableRowElement>('#tablonotes tr'))
           .reduce((acc, element) => {
-            const key = element.querySelector<HTMLTableHeaderCellElement>('th').textContent;
-            const value = element.querySelector<HTMLTableDataCellElement>('td').textContent;
+            const th = element.querySelector<HTMLTableHeaderCellElement>('th');
+            const td = element.querySelector<HTMLTableDataCellElement>('td');
+            const key = categories[th.textContent] ?? th.textContent;
 
-            return { ...acc, [key]: value };
+            if (isNil(td) || isNaN(toFloat(td.textContent))) return acc;
+
+            return { ...acc, [key]: toFloat(td.textContent) };
           }, {}),
       };
 
-      const evaluations = document.querySelector<HTMLAnchorElement>('p#nobt > a');
-      const department = document.querySelector<HTMLElement>('#info > p:nth-child(1) > strong');
-      const mairie = document.querySelector<HTMLAnchorElement>('#info > p:nth-child(2) > a');
-      const toursim = document.querySelector<HTMLAnchorElement>('#info > p:nth-child(3) > a');
-      const insee = document.querySelector<HTMLAnchorElement>('#info > p:nth-child(5) > a');
+      const getPopulation = async (websites: string[]): Promise<number> => {
+        const insee = websites.find(url => url.includes('insee'));
+
+        return isUndefined(insee) ? 0 : getPopulationDensity(insee);
+      };
+
+      const infos = Array
+        .from(document.querySelectorAll<HTMLParagraphElement>('#info p'))
+        .reduce<Partial<City>>((acc, element) => {
+          const strong = element.querySelector<HTMLElement>('strong');
+          const link = element.querySelector<HTMLAnchorElement>('a');
+
+          if (!isNil(strong)) {
+            const [id, name] = strong.textContent.split('-').map(el => el.trim());
+
+            return { ...acc, department: { id, name } };
+          }
+
+          if (!isNil(link)) {
+            const href = link.getAttribute('href');
+            const { websites = [] } = acc;
+
+            return { ...acc, websites: [...websites, href] };
+          }
+
+          return acc;
+        }, {});
+
+      const population = has(infos, 'websites') ? await getPopulation(infos.websites) : 0;
 
       const city: City = {
         name,
-        url,
-        title: isNil(title) ? null : title.textContent,
+        url: 'https://www.ville-ideale.fr' + url,
+        postcode: isNil(title) || isNil(title.textContent.match(/\d+/))
+          ? null
+          : title.textContent.match(/\d+/)[0],
         map: isNil(map) ? null : map.getAttribute('href'),
         rating,
-        evaluations: isNil(evaluations) ? null : evaluations.textContent,
-        department: isNil(department) ? null : department.textContent,
-        mairie: isNil(mairie) ? null : mairie.getAttribute('href'),
-        toursim: isNil(toursim) ? null : toursim.getAttribute('href'),
-        insee: isNil(insee) ? null : insee.getAttribute('href'),
+        population,
+        ...infos,
       };
 
       console.log(city)
 
       data.push(city);
 
-      await sleep(2000);
+      await sleep(random(2000, 6000));
     }
   }
 

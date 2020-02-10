@@ -4,19 +4,18 @@ export interface Department {
 }
 
 export interface City {
-  readonly url: string;
-  readonly name: string;
-  readonly title?: string;
+  readonly url?: string;
+  readonly name?: string;
+  readonly postcode?: string;
   readonly map?: string;
   readonly rating?: {
-    global: string;
-    [k: string]: string;
+    global?: number;
+    [k: string]: number;
+    count: number;
   };
-  readonly evaluations?: string;
-  readonly department?: string;
-  readonly mairie?: string;
-  readonly toursim?: string;
-  readonly insee?: string;
+  readonly department?: Department;
+  readonly websites?: string[];
+  readonly population?: number | null;
 }
 
 export interface Cities {
