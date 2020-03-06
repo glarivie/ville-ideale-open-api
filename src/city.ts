@@ -1,24 +1,22 @@
-import { isNil, isNaN, has, random } from 'lodash';
+import { isNil, isNaN, has, random, isUndefined, pick } from 'lodash';
 
-import request from './helpers/request';
+import scraper from './config/scraper';
 import categories from './constants/rating';
 import { extractBody, sleep } from './helpers/jsdom';
 import getPopulationDensity from './insee';
-import { Cities, City } from './types';
-import { isUndefined } from 'util';
+import { City, HTMLString } from './types';
+import { saveCity } from './database';
 
 const toFloat = (str: string): number => parseFloat(str.replace(/,/g, '.'));
 
-const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> => {
+const extractCityData = async (cities: City[]): Promise<City[]> => {
   const data: City[] = [];
 
-  for (const cities of Object.values(citiesFromDepartments)) {
-    for (const { name, url } of cities) {
-      const { data: html } = await request({
-        method: 'GET',
-        url,
-        withCredentials: true,
-        useCache: true,
+  for (const { name, url } of cities) {
+    try {
+      const html = await scraper.get<HTMLString>(url, {
+        retry: 1,
+        country_code: 'FR',
       });
 
       const document = await extractBody(html);
@@ -28,7 +26,6 @@ const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> =
       const png = document.querySelector<HTMLParagraphElement>('p#ng');
       const global = (isNil(png) || isNaN(toFloat(png.textContent))) ? null : toFloat(png.textContent);
       const evaluations = document.querySelector<HTMLAnchorElement>('p#nobt > a');
-
 
       const count = (isNil(evaluations) || isNil(evaluations.textContent.match(/\d+/)))
         ? 0
@@ -53,7 +50,11 @@ const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> =
       const getPopulation = async (websites: string[]): Promise<number> => {
         const insee = websites.find(url => url.includes('insee'));
 
-        return isUndefined(insee) ? 0 : getPopulationDensity(insee);
+        try {
+          return isUndefined(insee) ? 0 : getPopulationDensity(insee);
+        } catch (error) {
+          return 0;
+        }
       };
 
       const infos = Array
@@ -78,7 +79,7 @@ const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> =
           return acc;
         }, {});
 
-      const population = has(infos, 'websites') ? await getPopulation(infos.websites) : 0;
+      // const population = has(infos, 'websites') ? await getPopulation(infos.websites) : 0;
 
       const city: City = {
         name,
@@ -88,15 +89,18 @@ const extractCityData = async (citiesFromDepartments: Cities): Promise<City[]> =
           : title.textContent.match(/\d+/)[0],
         map: isNil(map) ? null : map.getAttribute('href'),
         rating,
-        population,
+        // population,
         ...infos,
       };
 
-      console.log(city)
+      console.log(pick(city, ['name', 'postcode']));
 
       data.push(city);
 
-      await sleep(random(2000, 6000));
+      await saveCity(city);
+      // await sleep(random(1000, 2000));
+    } catch (error) {
+      console.error(`[ERROR] Cannot get/save city "${name}" at "${url}"`);
     }
   }
 

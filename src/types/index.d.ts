@@ -1,10 +1,12 @@
+import { Document } from 'mongoose';
+
 export interface Department {
   readonly id: string;
   readonly name: string;
 }
 
 export interface City {
-  readonly url?: string;
+  readonly url: string;
   readonly name?: string;
   readonly postcode?: string;
   readonly map?: string;
@@ -21,3 +23,7 @@ export interface City {
 export interface Cities {
   [department: string]: City[];
 }
+
+export type MongoCity = Document & City;
+
+export type HTMLString = string;

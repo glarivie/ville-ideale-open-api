@@ -4,11 +4,11 @@ import { set, isNil, random } from 'lodash';
 import cache from './config/leveldb';
 import request from './helpers/request';
 import { extractBody, sleep } from './helpers/jsdom';
-import { Department, Cities, City } from './types';
+import { Department, City } from './types';
 
-const getCitiesFromDepartments = async (departments: Department[]): Promise<Cities> => {
+const getCitiesFromDepartments = async (departments: Department[]): Promise<City[]> => {
   const cookie = await cache.get('cookie');
-  const data: Cities = {};
+  const data: City[] = [];
 
   if (isNil(cookie))
     throw new Error('Cannot fetch cities without session cookie');
@@ -27,15 +27,16 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<Citi
     const elements = document.querySelectorAll<HTMLAnchorElement>('p > a');
 
     const cities = Array.from(elements).map((element: HTMLAnchorElement): City => ({
-      url: element.getAttribute('href'),
+      url: 'https://www.ville-ideale.fr' + element.getAttribute('href'),
       name: element.innerHTML.replace(/&nbsp;/g, ' '),
+      department: { id, name },
     }));
 
-    set(data, name, cities);
+    data.push(...cities);
 
     console.log({ id, name, cities: cities.length });
 
-    await sleep(random(1000, 5000));
+    await sleep(random(1000, 2000));
   }
 
   return data;

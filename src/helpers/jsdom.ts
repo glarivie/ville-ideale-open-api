@@ -1,6 +1,8 @@
 import { JSDOM } from 'jsdom';
 
-const extractBody = async (html: string): Promise<Document> => {
+import { HTMLString } from '../types';
+
+const extractBody = async (html: HTMLString): Promise<Document> => {
   const { window: { document } } = new JSDOM(html, { contentType: 'text/html' });
 
   return document;
