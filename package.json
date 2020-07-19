@@ -17,7 +17,7 @@
     "level": "^6.0.0",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "mongoose": "^5.8.11",
     "qs": "^6.9.1",
     "scraperapi-sdk": "^1.0.3",
