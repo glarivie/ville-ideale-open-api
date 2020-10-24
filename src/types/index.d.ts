@@ -1,7 +1,7 @@
 import { Document } from 'mongoose';
 
 export interface Department {
-  readonly id: string;
+  readonly id: number;
   readonly name: string;
 }
 

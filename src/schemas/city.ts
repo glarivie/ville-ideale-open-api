@@ -23,7 +23,7 @@ const CitySchema = new mongoose.Schema({
     living: { type: Number },
   },
   department: {
-    id: { type: String },
+    id: { type: Number },
     name: { type: String },
   },
   websites: { type: [String] },

@@ -1,3 +1,5 @@
+import { toNumber } from 'lodash';
+
 import request from './helpers/request';
 import { extractBody } from './helpers/jsdom';
 import { Department } from './types';
@@ -17,7 +19,10 @@ const extractDepartments = async (): Promise<Department[]> => {
     const { groups } = href.match(/affdept\('(?<id>[\dAB]+)',\s?'(?<name>.+)'\)/);
     const { id, name } = groups;
 
-    return { id, name };
+    return {
+      id: toNumber(id),
+      name: name.replace(/\\/g, ''),
+    };
   });
 
   return departments;
