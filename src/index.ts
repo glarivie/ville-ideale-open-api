@@ -5,8 +5,8 @@ import './config/mongo';
 import extractDepartments from './departments';
 import getCitiesFromDepartments from './cities';
 import extractCityData from './city';
-import CityModel from './schemas/city';
-import { City } from './types';
+// import CityModel from './schemas/city';
+// import { City } from './types';
 
 process
   .on('unhandledRejection', (reason, p) => {
@@ -23,14 +23,7 @@ const main = async () => {
     const departments = await extractDepartments();
     const citiesFromDepartments = await getCitiesFromDepartments(departments);
 
-    const data = citiesFromDepartments
-      .filter(({ department: { id } }) => [64, 40, 33, 17, 16, 47, 24, 86, 79, 85].includes(parseInt(id)));
-
-    // const data: City[] = await CityModel.find({ "department.id": "33" }).exec();
-    // console.log(data.length);
-    const cities = await extractCityData(data);
-
-    console.log({ records: cities.length });
+    await extractCityData(citiesFromDepartments);
   } catch (error) {
     console.error(error);
   } finally {

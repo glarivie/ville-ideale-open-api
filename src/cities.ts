@@ -1,5 +1,5 @@
 import { stringify } from 'qs';
-import { set, isNil, random } from 'lodash';
+import { isNil, random } from 'lodash';
 
 import cache from './config/leveldb';
 import request from './helpers/request';
@@ -14,7 +14,7 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<City
     throw new Error('Cannot fetch cities without session cookie');
 
   for (const { id, name } of departments) {
-    const { data: body } = await request({
+    const { data: body, fromCache } = await request({
       method: 'POST',
       url: '/scripts/cherche.php',
       withCredentials: true,
@@ -36,7 +36,7 @@ const getCitiesFromDepartments = async (departments: Department[]): Promise<City
 
     console.log({ id, name, cities: cities.length });
 
-    await sleep(random(1000, 2000));
+    await sleep(fromCache ? 0 : random(1000, 2000));
   }
 
   return data;

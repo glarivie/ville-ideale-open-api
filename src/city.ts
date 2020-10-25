@@ -1,6 +1,6 @@
-import { isNil, isNaN, has, random, isUndefined, pick } from 'lodash';
+import { isNil, isNaN, random, isUndefined, pick, isEmpty } from 'lodash';
 
-import scraper from './config/scraper';
+import request, { RequestConfig } from './helpers/request';
 import categories from './constants/rating';
 import { extractBody, sleep } from './helpers/jsdom';
 import getPopulationDensity from './insee';
@@ -13,11 +13,23 @@ const extractCityData = async (cities: City[]): Promise<City[]> => {
   const data: City[] = [];
 
   for (const { name, url } of cities) {
+    const options: RequestConfig = {
+      method: 'GET',
+      url,
+      withCredentials: true,
+    };
+
     try {
-      const html = await scraper.get<HTMLString>(url, {
-        retry: 1,
-        country_code: 'FR',
-      });
+      let html: HTMLString = '';
+      const initialRequest = await request<HTMLString>(options);
+
+      html = initialRequest.data;
+
+      if (isEmpty(html)) {
+        const retriedRequest = await request<HTMLString>({ ...options, newSession: true });
+
+        html = retriedRequest.data;
+      }
 
       const document = await extractBody(html);
 
@@ -83,7 +95,7 @@ const extractCityData = async (cities: City[]): Promise<City[]> => {
 
       const city: City = {
         name,
-        url: 'https://www.ville-ideale.fr' + url,
+        url,
         postcode: isNil(title) || isNil(title.textContent.match(/\d+/))
           ? null
           : title.textContent.match(/\d+/)[0],
@@ -93,12 +105,13 @@ const extractCityData = async (cities: City[]): Promise<City[]> => {
         ...infos,
       };
 
+      // console.log(city);
       console.log(pick(city, ['name', 'postcode']));
 
       data.push(city);
 
       await saveCity(city);
-      // await sleep(random(1000, 2000));
+      await sleep(random(1000, 2000));
     } catch (error) {
       console.error(`[ERROR] Cannot get/save city "${name}" at "${url}"`);
     }

@@ -18,9 +18,10 @@
     "leveldown": "^5.6.0",
     "levelup": "^4.4.0",
     "lodash": "^4.17.20",
-    "mongoose": "^5.10.9",
+    "mongoose": "^5.10.10",
     "qs": "^6.9.4",
     "scraperapi-sdk": "^1.0.6",
+    "tor-axios": "^1.0.9",
     "user-agents": "^1.0.559"
   },
   "devDependencies": {
